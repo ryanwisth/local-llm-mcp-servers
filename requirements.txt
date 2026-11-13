@@ -1,0 +1,5 @@
+# Each server.py also carries an inline PEP 723 header, so `uv run server.py` needs no install step.
+# This file is for a plain pip/venv setup. The `key_value` module used by worldmonitor ships with fastmcp.
+fastmcp==4.1.0
+yfinance>=1.7,<2
+pandas

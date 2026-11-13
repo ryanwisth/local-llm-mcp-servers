@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Secrets and local state
+.env
+.env.*
+!.env.example
+*.key
+*-key
+oauth/
+.worldmonitor-oauth/
+
+# Data, caches, logs
+*.db
+*.sqlite
+*.log
+.cache/
+.DS_Store
