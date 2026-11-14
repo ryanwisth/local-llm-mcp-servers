@@ -3,3 +3,6 @@
 fastmcp==4.1.0
 yfinance>=1.7,<2
 pandas
+# osv-scanner and drill need only fastmcp. osv-scanner also needs the osv-scanner CLI on PATH.
+# texify is heavy (torch and a 1.3 GB model) and is left out here on purpose; for that server only:
+#   pip install mcp texify pillow

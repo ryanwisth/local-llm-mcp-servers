@@ -1,6 +1,6 @@
 # local-llm-mcp-servers
 
-Three small MCP (Model Context Protocol) servers that give a locally hosted LLM live tools for world events, market prices and company fundamentals.
+Six small MCP (Model Context Protocol) servers that give a locally hosted LLM tools it lacks: live world events, market prices and company fundamentals, plus a dependency vulnerability audit, a read-only study coach and equation OCR.
 
 ## Why it exists
 
@@ -19,6 +19,12 @@ flowchart LR
     WM -->|OAuth or static key| WMAPI[(worldmonitor.app MCP)]
     TD -->|apikey query param| TDAPI[(api.twelvedata.com REST)]
     YF -->|yfinance library| YAPI[(Yahoo Finance)]
+    C --> OSV[osv-scanner/server.py<br/>1 tool]
+    C --> DR[drill/server.py<br/>6 drill_ tools]
+    C --> TX[texify/server.py<br/>1 tool]
+    OSV -->|local CLI| OSVDB[(OSV advisory database)]
+    DR -->|HTTP, read-only routes| DRAPP[(Adaptive Drill Engine<br/>on localhost)]
+    TX -->|local model| TXM[(texify model)]
 ```
 
 | Server | What it answers | Tools | Key |
@@ -26,16 +32,19 @@ flowchart LR
 | [`worldmonitor/`](worldmonitor/) | News, conflicts, disasters, markets, prediction markets, military posture, shipping chokepoints, energy, cyber, outbreaks, aviation | 15 (`wm_*`) | Browser login (free account) or `WORLDMONITOR_API_KEY` |
 | [`twelvedata/`](twelvedata/) | Live and historical prices for stocks, ETFs, forex and crypto; technical indicators; ranked comparisons | 7 (`td_*`) | `TWELVEDATA_API_KEY` (free plan works) |
 | [`yfinance/`](yfinance/) | Company profile, valuation stats, dividends, earnings, financial statements, price history, analyst ratings, news | 8 (`yf_*`) | None |
+| [`osv-scanner/`](osv-scanner/) | Which dependencies in a project folder or lockfile have known vulnerabilities | 1 (`scan_project`) | None (needs the `osv-scanner` CLI) |
+| [`drill/`](drill/) | How practice is going in a running [Adaptive Drill Engine](https://github.com/ryanwisth/adaptive-drill-engine): mastery per mistake pattern, recent sets, pacing, question-bank health | 6 (`drill_*`) | None |
+| [`texify/`](texify/) | The LaTeX for a cropped image of a math expression | 1 (`ocr_equation`) | None (downloads a 1.3 GB model on first use) |
 
-Twelve Data and yfinance are companions: Twelve Data's free plan serves prices and indicators but refuses profile, statistics, earnings and dividends (HTTP 403), and yfinance fills exactly that gap.
+The first three reach live data services; the last three wrap local tools. Twelve Data and yfinance are companions: Twelve Data's free plan serves prices and indicators but refuses profile, statistics, earnings and dividends (HTTP 403), and yfinance fills exactly that gap.
 
 ## Features
 
 - MCP over stdio; each server is one Python file with an inline PEP 723 dependency header, runnable with `uv run`.
-- Every reply is capped at 12,000 characters, and truncation is announced in the reply rather than silent.
+- Replies are capped (12,000 characters on the data servers, 60 findings on the vulnerability audit), and truncation is announced in the reply rather than silent.
 - Errors come back as plain-English `ERROR ...` strings the model can read and relay, never as stack traces.
 - Missing credentials return a setup message instead of failing or hanging.
-- Read-only by design: no trading or order tools anywhere.
+- Read-only by design: no trading or order tools anywhere, and the drill server leaves out every route that would fetch or answer a question.
 - World Monitor: OAuth client with dynamic registration, PKCE and silent token refresh, which never opens a browser from a tool call; `--login`, `--status` and a quota-free `--selftest`.
 - Twelve Data: multi-symbol calls are one comma-separated request; `td_compare` computes percent changes server-side; 429 responses are rewritten to explain the rate limit.
 - yfinance: curated field subsets instead of the 187-key `.info` dump; long price histories returned as CSV and resampled (daily to weekly to monthly to quarterly) instead of cut off.
@@ -98,6 +107,9 @@ local-llm-mcp-servers/
 ├── worldmonitor/   server.py (15 tools, OAuth client, CLI) + README with design notes
 ├── twelvedata/     server.py (7 tools over the REST API) + README
 ├── yfinance/       server.py (8 tools over the yfinance library) + README
+├── osv-scanner/    server.py (1 tool over the osv-scanner CLI) + README
+├── drill/          server.py (6 read-only tools over the Adaptive Drill Engine's HTTP routes) + README
+├── texify/         server.py (1 tool, equation image to LaTeX with the texify model) + README
 ├── .env.example    the environment variables the servers read
 └── requirements.txt  for a pip setup; uv users can ignore it
 ```
@@ -116,6 +128,10 @@ These figures come from the original project notes, with the date they were chec
 - **worldmonitor: built, live data not yet exercised.** Verified in-process with real fastmcp (15 tools listed; the no-login and expired-login paths return the setup message), through an mcpo bridge, and with `--selftest` against the live endpoint. No account login had been done, so reply sizes on real data are unverified.
 - **twelvedata: built, not yet run with a key.** The free-tier behavior was probed with keyless requests on 2026-09-18; until a key is set every tool returns the setup message.
 
+- **osv-scanner: working.** Checked on 2026-11-13 through an in-memory fastmcp client with osv-scanner 2.5.1 (findings, missing-path and missing-binary paths).
+- **drill: working against the sample bank.** Checked on 2026-11-13 through an in-memory fastmcp client against the engine serving its 21-item sample bank; all six tools returned data. Replies on a long practice history are unmeasured.
+- **texify: used in the original stack, not re-run here.** Only the tool listing and the bad-image error path were re-checked on 2026-11-13; see its README.
+
 No automated test suite is included. Possible next steps: tests with recorded responses, and paid-plan Twelve Data tools if a plan upgrade ever makes them useful.
 
 ## How this was built
@@ -124,4 +140,4 @@ Ryan Wisth built these by directing AI coding agents (Claude Code). He set the g
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Not affiliated with or endorsed by World Monitor, Twelve Data, Yahoo, or the yfinance project. All trademarks belong to their owners. Use of each upstream service is subject to that service's own terms.
+MIT, see [LICENSE](LICENSE). Not affiliated with or endorsed by World Monitor, Twelve Data, Yahoo, the yfinance project, Google's OSV project, or the texify project. All trademarks belong to their owners. Use of each upstream service is subject to that service's own terms.
