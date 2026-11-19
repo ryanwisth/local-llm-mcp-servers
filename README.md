@@ -2,6 +2,8 @@
 
 Six small MCP (Model Context Protocol) servers that give a locally hosted LLM tools it lacks: live world events, market prices and company fundamentals, plus a dependency vulnerability audit, a read-only study coach and equation OCR.
 
+**Plain-words write-up:** [Giving the AI on my laptop tools to use](https://ryanwisth.github.io/mcp-servers.html)
+
 ## Why it exists
 
 A local model knows nothing after its training cutoff and cannot look anything up. Public data services do publish their own MCP servers or APIs, but they are built for large cloud models: one hosted server here lists 90 tools and about 100k tokens of schema, which at local prefill speeds costs minutes per new chat and most of the context window. Others need an interactive OAuth login that a simple HTTP bridge cannot refresh.
